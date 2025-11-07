@@ -295,6 +295,34 @@ function applyWatermark() {
     }
     
     // 生成水印图片URL
+    const format = elements.outputFormat.value;
+    if (format === 'jpg') {
+        // 对于JPG，需要在白色背景上重新绘制
+        const jpgCanvas = document.createElement('canvas');
+        jpgCanvas.width = canvas.width;
+        jpgCanvas.height = canvas.height;
+        const jpgCtx = jpgCanvas.getContext('2d');
+        
+        // 填充白色背景
+        jpgCtx.fillStyle = '#ffffff';
+        jpgCtx.fillRect(0, 0, jpgCanvas.width, jpgCanvas.height);
+        
+        // 绘制水印后的图像
+        jpgCtx.drawImage(canvas, 0, 0);
+        
+        watermarkedImageUrl = jpgCanvas.toDataURL('image/jpeg', 0.9);
+    } else {
+        // 对于PNG，直接导出
+        watermarkedImageUrl = canvas.toDataURL('image/png');
+    }
+    
+    // 更新预览
+    elements.previewPlaceholder.classList.add('hidden');
+    elements.watermarkedImage.src = watermarkedImageUrl;
+    elements.watermarkedImage.classList.remove('hidden');
+    elements.downloadBtn.classList.remove('hidden');
+    elements.downloadBtn.disabled = false;
+}
 
 // 应用文本水印
 function applyTextWatermark(ctx, selectedPositions) {
@@ -305,6 +333,9 @@ function applyTextWatermark(ctx, selectedPositions) {
     const fontSize = parseInt(elements.watermarkFontSize.value);
     const canvasWidth = ctx.canvas.width;
     const canvasHeight = ctx.canvas.height;
+    
+    // 保存当前的合成操作
+    const originalComposite = ctx.globalCompositeOperation;
     
     // 设置文本样式
     ctx.fillStyle = color;
@@ -317,7 +348,7 @@ function applyTextWatermark(ctx, selectedPositions) {
     
     // 处理选中的位置
     selectedPositions.forEach(position => {
-        if (position === 'tile') {
+        if (position === 'tiled') {
             // 平铺全屏
             const textHeight = fontSize;
             const diagonal = Math.sqrt(textWidth * textWidth + textHeight * textHeight);
@@ -399,7 +430,7 @@ function applyImageWatermark(ctx, selectedPositions) {
     
     // 处理选中的位置
     selectedPositions.forEach(position => {
-        if (position === 'tile') {
+        if (position === 'tiled') {
             // 平铺全屏
             const spacing = 40; // 图片水印间距
             const gridWidth = watermarkWidth + spacing;
@@ -449,36 +480,8 @@ function applyImageWatermark(ctx, selectedPositions) {
             ctx.globalCompositeOperation = blendMode;
             ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
             ctx.restore();
-        }
-    });
-}
-    const format = elements.outputFormat.value;
-    if (format === 'jpg') {
-        // 对于JPG，需要在白色背景上重新绘制
-        const jpgCanvas = document.createElement('canvas');
-        jpgCanvas.width = canvas.width;
-        jpgCanvas.height = canvas.height;
-        const jpgCtx = jpgCanvas.getContext('2d');
-        
-        // 填充白色背景
-        jpgCtx.fillStyle = '#ffffff';
-        jpgCtx.fillRect(0, 0, jpgCanvas.width, jpgCanvas.height);
-        
-        // 绘制水印后的图像
-        jpgCtx.drawImage(canvas, 0, 0);
-        
-        watermarkedImageUrl = jpgCanvas.toDataURL('image/jpeg', 0.9);
-    } else {
-        // 对于PNG，直接导出
-        watermarkedImageUrl = canvas.toDataURL('image/png');
     }
-    
-    // 更新预览
-    elements.previewPlaceholder.classList.add('hidden');
-    elements.watermarkedImage.src = watermarkedImageUrl;
-    elements.watermarkedImage.classList.remove('hidden');
-    elements.downloadBtn.classList.remove('hidden');
-    elements.downloadBtn.disabled = false;
+});
 }
 
 // 下载水印图片
