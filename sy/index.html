@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小泽添加水印平台 - 专业在线水印工具</title>
+    <meta name="description" content="小泽添加水印平台是一款专业的在线水印工具，支持文本水印和图片水印，提供丰富的水印样式和位置选项，100%本地处理，保护您的隐私安全。">
+    <meta name="keywords" content="小泽,ZeAy,添加水印,水印工具,在线水印,图片水印,文本水印,水印平台,免费水印">
+    <meta name="author" content="小泽 (ZeAy)">
+    <link rel="canonical" href="/">
+    <meta name="robots" content="index, follow">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>小泽添加水印平台</h1>
+            <p class="platform-description">由小泽(ZeAy)开发的专业水印工具，提供简单高效的添加水印服务</p>
+            <p class="privacy-badge">100% 私密</p>
+        </header>
+
+        <main>
+            <!-- 步骤1：选择本地图片 -->
+            <section class="step-section">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <h2>选择本地图片</h2>
+                </div>
+                <div class="platform-info">
+                    <p>小泽添加水印平台为您提供专业的水印服务，支持各种图片格式的水印处理。</p>
+                </div>
+                <div class="step-content">
+                    <p class="step-description">从您的设备中选择图片</p>
+                    <p class="file-format-info">PNG、JPG、GIF——本地处理</p>
+                    
+                    <div class="file-upload-container">
+                        <label for="image-upload" class="file-upload-label">
+                            <div class="upload-icon">📁</div>
+                            <span>点击上传图片</span>
+                            <input type="file" id="image-upload" accept="image/png, image/jpeg, image/gif" hidden>
+                        </label>
+                    </div>
+                    
+                    <div id="selected-file-info" class="selected-file-info hidden">
+                        <div class="file-info-content">
+                            <span id="file-name">文件名</span>
+                            <button id="remove-file" class="remove-file-btn">移除</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 步骤2：水印设置 -->
+            <section class="step-section">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <h2>水印设置</h2>
+                </div>
+                <div class="step-content">
+                    <div class="watermark-options">
+                        <div class="option-group">
+                            <label>水印类型</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="watermark-type" value="text" checked> 文本水印</label>
+                                <label><input type="radio" name="watermark-type" value="image"> 图片水印</label>
+                            </div>
+                        </div>
+                        
+                        <div class="option-group text-watermark-options">
+                            <label for="watermark-text">水印文本</label>
+                            <input type="text" id="watermark-text" placeholder="请输入水印文本" value="请勿外传">
+                        </div>
+                        
+                        <div class="option-group image-watermark-options hidden">
+                            <label for="watermark-image-upload">水印图片</label>
+                            <label for="watermark-image-upload" class="file-upload-label small">
+                                <span>上传水印图片</span>
+                                <input type="file" id="watermark-image-upload" accept="image/png, image/jpeg, image/gif" hidden>
+                            </label>
+                            <div id="watermark-image-info" class="selected-file-info hidden">
+                                <div class="file-info-content">
+                                    <span id="watermark-image-name">水印图片</span>
+                                    <button id="remove-watermark-image" class="remove-file-btn">移除</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="option-group text-watermark-options">
+                            <label for="watermark-color">颜色</label>
+                            <input type="color" id="watermark-color" value="#000000">
+                        </div>
+                        
+                        <div class="option-group">
+                            <label>水印位置</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="watermark-position" value="top-left" checked> 左上角</label>
+                                <label><input type="checkbox" name="watermark-position" value="top-right" checked> 右上角</label>
+                                <label><input type="checkbox" name="watermark-position" value="bottom-left" checked> 左下角</label>
+                                <label><input type="checkbox" name="watermark-position" value="bottom-right" checked> 右下角</label>
+                                <label><input type="checkbox" name="watermark-position" value="tiled"> 平铺全屏</label>
+                            </div>
+                        </div>
+
+                        <div class="option-group">
+                            <label for="watermark-opacity">透明度: <span id="opacity-value">100</span>%</label>
+                            <input type="range" id="watermark-opacity" min="10" max="100" value="100">
+                        </div>
+
+                        <div class="option-group text-watermark-options">
+                            <label for="watermark-angle">角度: <span id="angle-value">45</span>°</label>
+                            <input type="range" id="watermark-angle" min="0" max="360" value="45">
+                        </div>
+
+                        <div class="option-group text-watermark-options">
+                            <label for="watermark-spacing">间隔: <span id="spacing-value">30</span></label>
+                            <input type="range" id="watermark-spacing" min="10" max="100" value="30">
+                        </div>
+
+                        <div class="option-group text-watermark-options">
+                            <label for="watermark-font-size">字体大小: <span id="font-size-value">24</span>px</label>
+                            <input type="range" id="watermark-font-size" min="12" max="72" value="24">
+                        </div>
+
+                        <div class="option-group image-watermark-options hidden">
+                            <label for="watermark-image-size">水印大小: <span id="image-size-value">20</span>%</label>
+                            <input type="range" id="watermark-image-size" min="5" max="50" value="20">
+                        </div>
+
+                        <div class="option-group image-watermark-options hidden">
+                            <label for="watermark-blend-mode">融合模式:</label>
+                            <select id="watermark-blend-mode">
+                                <option value="normal">正常</option>
+                                <option value="multiply">正片叠底</option>
+                                <option value="screen">滤色</option>
+                                <option value="overlay">叠加</option>
+                                <option value="darken">变暗</option>
+                                <option value="lighten">变亮</option>
+                                <option value="color-dodge">颜色减淡</option>
+                                <option value="color-burn">颜色加深</option>
+                            </select>
+                        </div>
+
+                        <div class="option-group">
+                            <label for="output-format">输出格式</label>
+                            <select id="output-format">
+                                <option value="png">PNG (高质量，文件较大)</option>
+                                <option value="jpg">JPG (压缩，文件较小)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 步骤3：预览与下载 -->
+            <section class="step-section">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <h2>预览与下载</h2>
+                </div>
+                <div class="step-content">
+                    <div class="preview-section">
+                        <div class="auto-refresh">
+                            <input type="checkbox" id="auto-refresh" checked>
+                            <label for="auto-refresh">自动刷新</label>
+                        </div>
+                        
+                        <div class="preview-container">
+                            <h3>预览</h3>
+                            <div id="preview-placeholder" class="preview-placeholder">
+                                <p>选择一张图片以预览</p>
+                                <p class="placeholder-text">您的水印图片将显示在此处</p>
+                            </div>
+                            <canvas id="preview-canvas" class="preview-canvas hidden"></canvas>
+                            <img id="watermarked-image" class="watermarked-image hidden" alt="水印图片预览">
+                        </div>
+                        
+                        <button id="download-btn" class="download-btn hidden" disabled>
+                            点击水印图片下载
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+
+
+        <footer>
+        <p>&copy; 2025 <strong>小泽添加水印平台</strong> - 由小泽(ZeAy)开发的专业水印工具</p>
+    </footer>
+    </div>
+</body>
+</html>
