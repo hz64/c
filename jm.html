@@ -103,6 +103,44 @@
             transform: translateY(0);
             filter: brightness(0.95);
         }
+        #coverBtn {
+            background: linear-gradient(135deg,#7c3aed,#a855f7);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 26px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.22s ease;
+        }
+        #coverBtn:hover {
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+        }
+        #coverBtn:active {
+            transform: translateY(0);
+            filter: brightness(0.95);
+        }
+        .cover-wrap {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.4s ease;
+        }
+        .cover-img {
+            max-width: 100%;
+            border-radius: 14px;
+            background: #181b22;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .cover-img.loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
         .history-section {
             background: #1c1f26;
             border-radius: 18px;
@@ -258,6 +296,7 @@
         <div class="search-bar">
             <input id="jmId" placeholder="请输入JM编号数字" autocomplete="off">
             <button id="searchBtn">搜索预览</button>
+            <button id="coverBtn">查看封面</button>
         </div>
         <div id="historyBox" class="history-section">
             <div class="history-header">
@@ -272,12 +311,14 @@
 
 <script>
     const baseUrl = "https://cdn-msp3.jmdanjonproxy.vip/media/photos/";
+    const coverBaseUrl = "https://cdn-msp2.jmapiproxy1.cc/media/albums/";
     const BATCH = 5;
     const HISTORY_KEY = 'jm_search_history';
     const MAX_HISTORY = 15;
 
     const jmInput = document.getElementById('jmId');
     const btn = document.getElementById('searchBtn');
+    const coverBtn = document.getElementById('coverBtn');
     const box = document.getElementById('comicBox');
     const historyBox = document.getElementById('historyBox');
     const historyTags = document.getElementById('historyTags');
@@ -465,6 +506,38 @@
             isLoading = false;
         }, 1500);
     }
+
+    // === 查看封面 ===
+    function loadCover() {
+        const jm = jmInput.value.trim();
+        if(!jm) {
+            box.innerHTML = '<div class="error">请输入JM编号</div>';
+            return;
+        }
+
+        currentJm = jm;
+        currentPage = 0;
+        noMore = false;
+        consecutiveErrors = 0;
+        removeSentinel();
+        hideLoadingIndicator();
+
+        const url = `${coverBaseUrl}${jm}_3x4.jpg`;
+        box.innerHTML = `
+            <div class="cover-wrap">
+                <img class="cover-img" src="${url}" alt="JM${jm} 封面">
+            </div>
+        `;
+        const coverImg = box.querySelector('.cover-img');
+        coverImg.onload = () => coverImg.classList.add('loaded');
+        coverImg.onerror = () => {
+            box.innerHTML = '<div class="error">封面加载失败</div>';
+        };
+
+        saveHistory(jm);
+    }
+
+    coverBtn.onclick = loadCover;
 
     btn.onclick = doSearch;
     jmInput.addEventListener('keydown', (e) => {
