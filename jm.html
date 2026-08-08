@@ -273,7 +273,6 @@
 <script>
     const baseUrl = "https://cdn-msp3.jmdanjonproxy.vip/media/photos/";
     const BATCH = 5;
-    const COOLDOWN = 2000;
     const HISTORY_KEY = 'jm_search_history';
     const MAX_HISTORY = 15;
 
@@ -291,7 +290,6 @@
     let consecutiveErrors = 0;
     let sentinel = null;
     let loadingIndicator = null;
-    let lastLoadTime = 0;
 
     function padPage(n) {
         return n.toString().padStart(5,'0');
@@ -408,10 +406,7 @@
 
     function loadMore() {
         if(!currentJm || isLoading || noMore) return;
-        const now = Date.now();
-        if(now - lastLoadTime < COOLDOWN) return;
         isLoading = true;
-        lastLoadTime = now;
 
         showLoadingIndicator();
 
