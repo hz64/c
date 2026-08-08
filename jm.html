@@ -60,14 +60,15 @@
             flex-wrap: wrap;
             gap: 12px;
             align-items: center;
-            margin-bottom: 28px;
+            margin-bottom: 16px;
             transition: box-shadow 0.3s ease;
         }
         .search-bar:hover {
             box-shadow: 0 10px 30px rgba(0,0,0,0.45);
         }
-        .search-bar input,
-        .search-bar select {
+        #jmId {
+            flex: 1;
+            min-width: 180px;
             background-color: #272b33;
             border: 1px solid #333842;
             border-radius: 10px;
@@ -75,24 +76,12 @@
             padding: 12px 16px;
             font-size: 15px;
             transition: border-color 0.24s ease, box-shadow 0.24s ease;
-            cursor: pointer;
+            cursor: text;
         }
-        .search-bar input:focus,
-        .search-bar select:focus {
+        #jmId:focus {
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-        #jmId {
-            flex: 1;
-            min-width: 180px;
-            cursor: text;
-        }
-        .page-input {
-            width: 110px;
-        }
-        #pageSelect {
-            width: 130px;
         }
         #searchBtn {
             background: linear-gradient(135deg,#2563eb,#3b82f6);
@@ -114,10 +103,60 @@
             transform: translateY(0);
             filter: brightness(0.95);
         }
-        .tip-text {
-            width: 100%;
+        .history-section {
+            background: #1c1f26;
+            border-radius: 18px;
+            padding: 16px 24px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            display: none;
+        }
+        .history-section.has-history {
+            display: block;
+            animation: fadeInUp 0.35s ease;
+        }
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .history-header span {
             font-size: 13px;
             color: #9ca3af;
+        }
+        #clearHistory {
+            background: none;
+            border: none;
+            color: #f87171;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        #clearHistory:hover {
+            background: rgba(248,113,113,0.12);
+        }
+        .history-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .history-tag {
+            background: #272b33;
+            border: 1px solid #333842;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 13px;
+            color: #c4c9d4;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .history-tag:hover {
+            background: #303540;
+            border-color: #3b82f6;
+            color: #ffffff;
         }
         .comic-list {
             display: flex;
@@ -145,7 +184,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 80px 0;
+            padding: 60px 0;
             color: #9ca3af;
             font-size: 15px;
             animation: fadeInUp 0.3s ease;
@@ -165,6 +204,13 @@
             color: #f87171;
             animation: fadeInUp 0.3s ease;
         }
+        .end-msg {
+            text-align: center;
+            padding: 30px 0;
+            color: #6b7280;
+            font-size: 14px;
+            animation: fadeInUp 0.3s ease;
+        }
         footer {
             margin-top: 40px;
             text-align: center;
@@ -179,10 +225,6 @@
             #jmId {
                 width: 100%;
             }
-            .page-input, #pageSelect {
-                flex: 1;
-                width: auto;
-            }
             #searchBtn {
                 width: 100%;
             }
@@ -195,19 +237,15 @@
     </nav>
     <div class="wrap">
         <div class="search-bar">
-            <input id="jmId" placeholder="请输入JM编号数字">
-            <select id="pageSelect">
-                <option value="3">浏览 3 页</option>
-                <option value="5" selected>浏览 5 页</option>
-                <option value="10">浏览 10 页</option>
-                <option value="15">浏览 15 页</option>
-                <option value="20">浏览 20 页</option>
-                <option value="custom">自定义页码</option>
-            </select>
-            <input class="page-input" type="number" id="startPage" value="1" min="1">
-            <input class="page-input" type="number" id="endPage" value="5" min="1">
+            <input id="jmId" placeholder="请输入JM编号数字" autocomplete="off">
             <button id="searchBtn">搜索预览</button>
-            <div class="tip-text">输入JM编号选择浏览页数，自定义模式可手动调整起止页码</div>
+        </div>
+        <div id="historyBox" class="history-section">
+            <div class="history-header">
+                <span>最近搜索</span>
+                <button id="clearHistory">清空记录</button>
+            </div>
+            <div id="historyTags" class="history-tags"></div>
         </div>
         <div id="comicBox" class="comic-list"></div>
         <footer>小泽天天开心</footer>
@@ -215,46 +253,106 @@
 
 <script>
     const baseUrl = "https://cdn-msp3.jmdanjonproxy.vip/media/photos/";
+    const BATCH = 5;
+    const HISTORY_KEY = 'jm_search_history';
+    const MAX_HISTORY = 15;
+
     const jmInput = document.getElementById('jmId');
-    const startEl = document.getElementById('startPage');
-    const endEl = document.getElementById('endPage');
-    const pageSelect = document.getElementById('pageSelect');
     const btn = document.getElementById('searchBtn');
     const box = document.getElementById('comicBox');
+    const historyBox = document.getElementById('historyBox');
+    const historyTags = document.getElementById('historyTags');
+    const clearBtn = document.getElementById('clearHistory');
+
+    let currentJm = null;
+    let currentPage = 0;
+    let isLoading = false;
+    let noMore = false;
+    let consecutiveErrors = 0;
+    let sentinel = null;
 
     function padPage(n) {
         return n.toString().padStart(5,'0');
     }
 
-    pageSelect.addEventListener('change', ()=>{
-        const val = pageSelect.value;
-        if(val !== 'custom'){
-            startEl.value = 1;
-            endEl.value = Number(val);
+    // === 搜索历史 ===
+    function getHistory() {
+        try {
+            return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+        } catch(e) {
+            return [];
         }
+    }
+
+    function saveHistory(jm) {
+        let list = getHistory();
+        list = list.filter(v => v !== jm);
+        list.unshift(jm);
+        if(list.length > MAX_HISTORY) list = list.slice(0, MAX_HISTORY);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const list = getHistory();
+        if(list.length === 0) {
+            historyBox.classList.remove('has-history');
+            return;
+        }
+        historyBox.classList.add('has-history');
+        historyTags.innerHTML = list.map(v =>
+            `<button class="history-tag" data-jm="${v}">${v}</button>`
+        ).join('');
+    }
+
+    historyTags.addEventListener('click', (e) => {
+        const tag = e.target.closest('.history-tag');
+        if(!tag) return;
+        jmInput.value = tag.dataset.jm;
+        doSearch();
     });
 
-    [startEl, endEl].forEach(el => {
-        el.addEventListener('input', () => {
-            pageSelect.value = 'custom';
-        });
+    clearBtn.addEventListener('click', () => {
+        localStorage.removeItem(HISTORY_KEY);
+        historyBox.classList.remove('has-history');
+        historyTags.innerHTML = '';
     });
 
-    btn.onclick = ()=>{
+    // === 无限滚动 ===
+    function createSentinel() {
+        sentinel = document.createElement('div');
+        sentinel.id = 'scrollSentinel';
+        sentinel.style.height = '1px';
+        box.appendChild(sentinel);
+        const observer = new IntersectionObserver((entries) => {
+            if(entries[0].isIntersecting && !isLoading && !noMore) {
+                loadMore();
+            }
+        }, { rootMargin: '200px' });
+        observer.observe(sentinel);
+    }
+
+    function removeSentinel() {
+        if(sentinel) {
+            sentinel.remove();
+            sentinel = null;
+        }
+    }
+
+    function doSearch() {
         const jm = jmInput.value.trim();
-        const s = Number(startEl.value);
-        const e = Number(endEl.value);
-        box.innerHTML = '';
-
-        if(!jm){
-            box.innerHTML = `<div class="error">请输入JM编号</div>`;
-            return;
-        }
-        if(isNaN(s)||isNaN(e)||s<1||e<s){
-            box.innerHTML = `<div class="error">页码范围错误</div>`;
+        if(!jm) {
+            box.innerHTML = '<div class="error">请输入JM编号</div>';
             return;
         }
 
+        // 重置状态
+        currentJm = jm;
+        currentPage = 0;
+        isLoading = false;
+        noMore = false;
+        consecutiveErrors = 0;
+        removeSentinel();
         box.innerHTML = `
             <div class="loading">
                 <div class="spinner"></div>
@@ -262,32 +360,81 @@
             </div>
         `;
 
-        setTimeout(()=>{
+        saveHistory(jm);
+
+        // 加载第一批
+        setTimeout(() => {
             box.innerHTML = '';
-            for(let i = s;i<=e;i++){
-                const url = `${baseUrl}${jm}/${padPage(i)}.webp`;
-                const div = document.createElement('div');
-                div.className = 'img-item';
-                div.style.animationDelay = `${(i - s) * 0.08}s`;
-                
-                const img = document.createElement('img');
-                img.className = 'comic-img';
-                img.loading = 'lazy';
-                img.src = url;
-                img.alt = `第${i}页`;
-                
-                img.onload = () => {
-                    img.classList.add('loaded');
-                };
-                img.onerror = () => {
-                    div.remove();
-                };
-                
-                div.appendChild(img);
-                box.appendChild(div);
-            }
+            loadMore();
         }, 250);
     }
+
+    function loadMore() {
+        if(!currentJm || isLoading || noMore) return;
+        isLoading = true;
+
+        const start = currentPage + 1;
+        const end = currentPage + BATCH;
+        let loadedCount = 0;
+        let errorCount = 0;
+
+        for(let i = start; i <= end; i++) {
+            const url = `${baseUrl}${currentJm}/${padPage(i)}.webp`;
+            const div = document.createElement('div');
+            div.className = 'img-item';
+            div.style.animationDelay = `${(i - start) * 0.06}s`;
+
+            const img = document.createElement('img');
+            img.className = 'comic-img';
+            img.loading = 'lazy';
+            img.src = url;
+            img.alt = `第${i}页`;
+
+            img.onload = () => {
+                img.classList.add('loaded');
+                loadedCount++;
+            };
+            img.onerror = () => {
+                div.remove();
+                errorCount++;
+            };
+
+            div.appendChild(img);
+            box.appendChild(div);
+        }
+
+        currentPage = end;
+
+        // 等图片加载结果出来后判断是否还有更多
+        setTimeout(() => {
+            if(errorCount === BATCH) {
+                consecutiveErrors++;
+                if(consecutiveErrors >= 2) {
+                    noMore = true;
+                    if(currentPage > BATCH) {
+                        box.insertAdjacentHTML('beforeend', '<div class="end-msg">— 已加载全部页面 —</div>');
+                    }
+                }
+            } else {
+                consecutiveErrors = 0;
+            }
+
+            removeSentinel();
+            if(!noMore) {
+                createSentinel();
+            }
+
+            isLoading = false;
+        }, 1500);
+    }
+
+    btn.onclick = doSearch;
+    jmInput.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') doSearch();
+    });
+
+    // 页面加载时渲染历史记录
+    renderHistory();
 </script>
 </body>
 </html>
