@@ -103,25 +103,24 @@
             transform: translateY(0);
             filter: brightness(0.95);
         }
-        #coverBtn {
-            background: linear-gradient(135deg,#7c3aed,#a855f7);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 26px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
+        .album-link {
+            display: block;
+            background: #1c1f26;
+            border: 1px solid #333842;
+            border-radius: 12px;
+            padding: 14px 20px;
+            margin-bottom: 14px;
+            color: #a5b4fc;
+            text-decoration: none;
+            font-size: 14px;
+            text-align: center;
             transition: all 0.22s ease;
+            animation: fadeInUp 0.35s ease;
         }
-        #coverBtn:hover {
-            filter: brightness(1.12);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
-        }
-        #coverBtn:active {
-            transform: translateY(0);
-            filter: brightness(0.95);
+        .album-link:hover {
+            background: #272b33;
+            border-color: #3b82f6;
+            color: #c7d2fe;
         }
         .cover-wrap {
             width: 100%;
@@ -296,7 +295,6 @@
         <div class="search-bar">
             <input id="jmId" placeholder="请输入JM编号数字" autocomplete="off">
             <button id="searchBtn">搜索预览</button>
-            <button id="coverBtn">查看封面</button>
         </div>
         <div id="historyBox" class="history-section">
             <div class="history-header">
@@ -318,7 +316,6 @@
 
     const jmInput = document.getElementById('jmId');
     const btn = document.getElementById('searchBtn');
-    const coverBtn = document.getElementById('coverBtn');
     const box = document.getElementById('comicBox');
     const historyBox = document.getElementById('historyBox');
     const historyTags = document.getElementById('historyTags');
@@ -407,13 +404,16 @@
             return;
         }
 
-        // 重置状态
         currentJm = jm;
         currentPage = 0;
         isLoading = false;
         noMore = false;
         consecutiveErrors = 0;
         removeSentinel();
+        hideLoadingIndicator();
+
+        // 更新 URL 以便复制分享
+        history.replaceState(null, '', `?q=${jm}`);
         box.innerHTML = `
             <div class="loading">
                 <div class="spinner"></div>
@@ -423,9 +423,24 @@
 
         saveHistory(jm);
 
-        // 加载第一批
         setTimeout(() => {
             box.innerHTML = '';
+            // 原站链接
+            const albumUrl = `https://18comic.vip/album/${jm}`;
+            box.insertAdjacentHTML('beforeend', `
+                <a class="album-link" href="${albumUrl}" target="_blank" rel="noopener">在 JM 原站查看 JM${jm} →</a>
+            `);
+            // 封面
+            const coverUrl = `${coverBaseUrl}${jm}_3x4.jpg`;
+            box.insertAdjacentHTML('beforeend', `
+                <div class="cover-wrap">
+                    <img class="cover-img" src="${coverUrl}" alt="JM${jm} 封面">
+                </div>
+            `);
+            const coverImg = box.querySelector('.cover-img');
+            coverImg.onload = () => coverImg.classList.add('loaded');
+            coverImg.onerror = () => { coverImg.parentElement.remove(); };
+            // 加载漫画页
             loadMore();
         }, 250);
     }
@@ -507,38 +522,6 @@
         }, 1500);
     }
 
-    // === 查看封面 ===
-    function loadCover() {
-        const jm = jmInput.value.trim();
-        if(!jm) {
-            box.innerHTML = '<div class="error">请输入JM编号</div>';
-            return;
-        }
-
-        currentJm = jm;
-        currentPage = 0;
-        noMore = false;
-        consecutiveErrors = 0;
-        removeSentinel();
-        hideLoadingIndicator();
-
-        const url = `${coverBaseUrl}${jm}_3x4.jpg`;
-        box.innerHTML = `
-            <div class="cover-wrap">
-                <img class="cover-img" src="${url}" alt="JM${jm} 封面">
-            </div>
-        `;
-        const coverImg = box.querySelector('.cover-img');
-        coverImg.onload = () => coverImg.classList.add('loaded');
-        coverImg.onerror = () => {
-            box.innerHTML = '<div class="error">封面加载失败</div>';
-        };
-
-        saveHistory(jm);
-    }
-
-    coverBtn.onclick = loadCover;
-
     btn.onclick = doSearch;
     jmInput.addEventListener('keydown', (e) => {
         if(e.key === 'Enter') doSearch();
@@ -546,6 +529,14 @@
 
     // 页面加载时渲染历史记录
     renderHistory();
+
+    // 支持 ?q=jm号 查询参数
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if(q) {
+        jmInput.value = q;
+        doSearch();
+    }
 </script>
 </body>
 </html>
