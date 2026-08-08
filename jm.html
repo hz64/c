@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线 jm 漫画预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        body {
+            background-color: #0f1117;
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding-top: 64px;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: #161922;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            z-index: 999;
+            animation: fadeInUp 0.3s ease;
+        }
+        nav h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px 16px;
+            animation: fadeInUp 0.4s ease 0.1s both;
+        }
+        .search-bar {
+            background: #1c1f26;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 28px;
+            transition: box-shadow 0.3s ease;
+        }
+        .search-bar:hover {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+        }
+        .search-bar input,
+        .search-bar select {
+            background-color: #272b33;
+            border: 1px solid #333842;
+            border-radius: 10px;
+            color: #f0f0f0;
+            padding: 12px 16px;
+            font-size: 15px;
+            transition: border-color 0.24s ease, box-shadow 0.24s ease;
+            cursor: pointer;
+        }
+        .search-bar input:focus,
+        .search-bar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        #jmId {
+            flex: 1;
+            min-width: 180px;
+            cursor: text;
+        }
+        .page-input {
+            width: 110px;
+        }
+        #pageSelect {
+            width: 130px;
+        }
+        #searchBtn {
+            background: linear-gradient(135deg,#2563eb,#3b82f6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 26px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.22s ease;
+        }
+        #searchBtn:hover {
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+        }
+        #searchBtn:active {
+            transform: translateY(0);
+            filter: brightness(0.95);
+        }
+        .tip-text {
+            width: 100%;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .comic-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .img-item {
+            width: 100%;
+            text-align: center;
+            animation: fadeInUp 0.4s ease both;
+        }
+        .comic-img {
+            max-width: 100%;
+            border-radius: 12px;
+            background: #181b22;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .comic-img.loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 0;
+            color: #9ca3af;
+            font-size: 15px;
+            animation: fadeInUp 0.3s ease;
+        }
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #333842;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 14px;
+        }
+        .error {
+            text-align: center;
+            padding: 60px 0;
+            color: #f87171;
+            animation: fadeInUp 0.3s ease;
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            padding: 20px 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        @media(max-width:600px) {
+            .search-bar {
+                padding: 18px;
+            }
+            #jmId {
+                width: 100%;
+            }
+            .page-input, #pageSelect {
+                flex: 1;
+                width: auto;
+            }
+            #searchBtn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>在线 jm 漫画预览</h1>
+    </nav>
+    <div class="wrap">
+        <div class="search-bar">
+            <input id="jmId" placeholder="请输入JM编号数字">
+            <select id="pageSelect">
+                <option value="3">浏览 3 页</option>
+                <option value="5" selected>浏览 5 页</option>
+                <option value="10">浏览 10 页</option>
+                <option value="15">浏览 15 页</option>
+                <option value="20">浏览 20 页</option>
+                <option value="custom">自定义页码</option>
+            </select>
+            <input class="page-input" type="number" id="startPage" value="1" min="1">
+            <input class="page-input" type="number" id="endPage" value="5" min="1">
+            <button id="searchBtn">搜索预览</button>
+            <div class="tip-text">输入JM编号选择浏览页数，自定义模式可手动调整起止页码</div>
+        </div>
+        <div id="comicBox" class="comic-list"></div>
+        <footer>小泽天天开心</footer>
+    </div>
+
+<script>
+    const baseUrl = "https://cdn-msp3.jmdanjonproxy.vip/media/photos/";
+    const jmInput = document.getElementById('jmId');
+    const startEl = document.getElementById('startPage');
+    const endEl = document.getElementById('endPage');
+    const pageSelect = document.getElementById('pageSelect');
+    const btn = document.getElementById('searchBtn');
+    const box = document.getElementById('comicBox');
+
+    function padPage(n) {
+        return n.toString().padStart(5,'0');
+    }
+
+    pageSelect.addEventListener('change', ()=>{
+        const val = pageSelect.value;
+        if(val !== 'custom'){
+            startEl.value = 1;
+            endEl.value = Number(val);
+        }
+    });
+
+    [startEl, endEl].forEach(el => {
+        el.addEventListener('input', () => {
+            pageSelect.value = 'custom';
+        });
+    });
+
+    btn.onclick = ()=>{
+        const jm = jmInput.value.trim();
+        const s = Number(startEl.value);
+        const e = Number(endEl.value);
+        box.innerHTML = '';
+
+        if(!jm){
+            box.innerHTML = `<div class="error">请输入JM编号</div>`;
+            return;
+        }
+        if(isNaN(s)||isNaN(e)||s<1||e<s){
+            box.innerHTML = `<div class="error">页码范围错误</div>`;
+            return;
+        }
+
+        box.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <span>正在加载漫画...</span>
+            </div>
+        `;
+
+        setTimeout(()=>{
+            box.innerHTML = '';
+            for(let i = s;i<=e;i++){
+                const url = `${baseUrl}${jm}/${padPage(i)}.webp`;
+                const div = document.createElement('div');
+                div.className = 'img-item';
+                div.style.animationDelay = `${(i - s) * 0.08}s`;
+                
+                const img = document.createElement('img');
+                img.className = 'comic-img';
+                img.loading = 'lazy';
+                img.src = url;
+                img.alt = `第${i}页`;
+                
+                img.onload = () => {
+                    img.classList.add('loaded');
+                };
+                img.onerror = () => {
+                    div.remove();
+                };
+                
+                div.appendChild(img);
+                box.appendChild(div);
+            }
+        }, 250);
+    }
+</script>
+</body>
+</html>
