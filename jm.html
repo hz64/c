@@ -189,6 +189,16 @@
             font-size: 15px;
             animation: fadeInUp 0.3s ease;
         }
+        .loading-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 24px 0;
+            color: #9ca3af;
+            font-size: 13px;
+            animation: fadeInUp 0.3s ease;
+        }
         .spinner {
             width: 36px;
             height: 36px;
@@ -197,6 +207,15 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin-bottom: 14px;
+        }
+        .spinner-sm {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333842;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
         }
         .error {
             text-align: center;
@@ -254,6 +273,7 @@
 <script>
     const baseUrl = "https://cdn-msp3.jmdanjonproxy.vip/media/photos/";
     const BATCH = 5;
+    const COOLDOWN = 2000;
     const HISTORY_KEY = 'jm_search_history';
     const MAX_HISTORY = 15;
 
@@ -270,6 +290,8 @@
     let noMore = false;
     let consecutiveErrors = 0;
     let sentinel = null;
+    let loadingIndicator = null;
+    let lastLoadTime = 0;
 
     function padPage(n) {
         return n.toString().padStart(5,'0');
@@ -369,9 +391,29 @@
         }, 250);
     }
 
+    function showLoadingIndicator() {
+        if(loadingIndicator) return;
+        loadingIndicator = document.createElement('div');
+        loadingIndicator.className = 'loading-more';
+        loadingIndicator.innerHTML = '<div class="spinner-sm"></div><span>加载更多...</span>';
+        box.appendChild(loadingIndicator);
+    }
+
+    function hideLoadingIndicator() {
+        if(loadingIndicator) {
+            loadingIndicator.remove();
+            loadingIndicator = null;
+        }
+    }
+
     function loadMore() {
         if(!currentJm || isLoading || noMore) return;
+        const now = Date.now();
+        if(now - lastLoadTime < COOLDOWN) return;
         isLoading = true;
+        lastLoadTime = now;
+
+        showLoadingIndicator();
 
         const start = currentPage + 1;
         const end = currentPage + BATCH;
@@ -405,8 +447,9 @@
 
         currentPage = end;
 
-        // 等图片加载结果出来后判断是否还有更多
         setTimeout(() => {
+            hideLoadingIndicator();
+
             if(errorCount === BATCH) {
                 consecutiveErrors++;
                 if(consecutiveErrors >= 2) {
