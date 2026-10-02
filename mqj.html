@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小泽逆向默契局答案自动提取工具</title>
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+body {
+    background: #f5f7fa;
+    padding: 20px;
+    color: #333;
+}
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.header {
+    margin-bottom: 16px;
+}
+.header h1 {
+    font-size: 22px;
+    color: #1f2937;
+    margin-bottom: 8px;
+}
+.tips {
+    padding: 10px 14px;
+    background: #ecfdf5;
+    border: 1px solid #10b981;
+    border-radius: 8px;
+    color: #065f46;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+@media (max-width: 900px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.panel {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+.panel-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #1f2937;
+}
+textarea {
+    width: 100%;
+    min-height: 460px;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    white-space: pre;
+}
+textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+button {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+.btn-secondary {
+    background: #6b7280;
+    color: #fff;
+}
+.btn-secondary:hover {
+    background: #4b5563;
+}
+.btn-success {
+    background: #059669;
+    color: #fff;
+}
+.btn-success:hover {
+    background: #047857;
+}
+.result-box {
+    flex: 1;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px;
+    overflow: auto;
+    min-height: 420px;
+    max-height: 520px;
+    background: #fafafa;
+}
+.result-box pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #1f2937;
+}
+.empty {
+    color: #9ca3af;
+    font-size: 14px;
+}
+.stat {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6b7280;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>小泽逆向默契局答案自动提取工具</h1>
+        <div class="tips">
+            专门提取默契局答题页面内嵌的题库答案。左侧粘贴完整HTML源码 → 点击【提取答案清单】→ 右侧自动生成「题目+正确答案」纯文本清单
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <div class="panel">
+            <div class="panel-title">📥 粘贴HTML源码</div>
+            <textarea id="htmlInput" placeholder="在此粘贴完整的答题页面HTML源码"></textarea>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="extractAnswers()">提取答案清单</button>
+                <button class="btn-secondary" onclick="clearAll()">清空</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">📤 答案清单</div>
+            <div class="result-box">
+                <pre id="resultOut"><span class="empty">提取结果将显示在这里...</span></pre>
+            </div>
+            <div class="stat" id="statInfo"></div>
+            <div class="btn-group">
+                <button class="btn-success" onclick="copyResult()">复制答案清单</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function extractAnswers() {
+    const rawHtml = document.getElementById('htmlInput').value.trim();
+    if (!rawHtml) {
+        alert('请先粘贴HTML源码');
+        return;
+    }
+
+    try {
+        const reg = /var\s+questions\s*=\s*(\[[\s\S]*?\]);\s*var\s+cates/;
+        let match = rawHtml.match(reg);
+        
+        if (!match) {
+            const regBackup = /var\s+questions\s*=\s*(\[[\s\S]*?\]);\s*\n/;
+            const matchBackup = rawHtml.match(regBackup);
+            if (!matchBackup) {
+                document.getElementById('resultOut').innerHTML = '<span class="empty">未找到 questions 题库数组</span>';
+                document.getElementById('statInfo').textContent = '';
+                return;
+            }
+            match = [null, matchBackup[1]];
+        }
+
+        const jsonStr = match[1];
+        const cleanJson = jsonStr.replace(/,\s*]/g, ']').replace(/,\s*}/g, '}');
+        const questions = JSON.parse(cleanJson);
+        
+        let answerList = '';
+        let correctCount = 0;
+        
+        questions.forEach((q, index) => {
+            const num = index + 1;
+            const title = q.content;
+            const correctIndex = parseInt(q.selected_option);
+            const correctAnswer = q.options[correctIndex] || '选项缺失';
+            answerList += `${num}. ${title}\n   ✅ 正确答案：${correctAnswer}\n\n`;
+            correctCount++;
+        });
+
+        let summary = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+        summary += `📊 共提取到 ${correctCount} 道题目\n`;
+        summary += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+        
+        const finalText = summary + answerList;
+        document.getElementById('resultOut').textContent = finalText;
+        document.getElementById('statInfo').textContent = `✅ 成功提取 ${correctCount} 道题`;
+
+    } catch (e) {
+        document.getElementById('resultOut').innerHTML = 
+            `<span style="color:#dc2626;">提取失败：${e.message}</span>\n\n` +
+            `常见原因：\n` +
+            `1. HTML不完整，缺少questions数组\n` +
+            `2. 数组语法不标准，存在特殊干扰字符\n` +
+            `3. 页面结构与默认模板差异较大`;
+        document.getElementById('statInfo').textContent = '';
+    }
+}
+
+function copyResult() {
+    const text = document.getElementById('resultOut').textContent;
+    if (!text || text.includes('提取结果将显示在这里')) {
+        alert('暂无内容可复制');
+        return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+        alert('复制成功！');
+    }).catch(() => {
+        alert('复制失败，请手动复制');
+    });
+}
+
+function clearAll() {
+    document.getElementById('htmlInput').value = '';
+    document.getElementById('resultOut').innerHTML = '<span class="empty">提取结果将显示在这里...</span>';
+    document.getElementById('statInfo').textContent = '';
+}
+</script>
+</body>
+</html>
